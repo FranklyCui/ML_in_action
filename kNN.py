@@ -1,5 +1,6 @@
 ﻿import numpy as np
 import operator
+from os import listdir
 
 def createDataSet():
     """
@@ -50,12 +51,7 @@ def classify(obj_vec, data_set, data_labels, k):
     laber_list = laber_dic.items()  #字典转成列表
     sort_laber_k = sorted(laber_list, key = operator.itemgetter(1), reverse = True)  #依据列表中元素的第二个索引排序
     
-    #测试：
-    print(sort_laber_k)
-    print(len(sort_laber_k))
-    
     return sort_laber_k[0][0]
-
 
 # 解析数据：从文本文件中将数据解析为Numpy数据
 def file_to_matrix(file_name):
@@ -99,8 +95,6 @@ def file_to_matrix(file_name):
         index += 1
         
     return features_mat, labels_arr
-        
-        
 
 def autoNorm(data_set):
     """ 
@@ -169,5 +163,91 @@ def classify_person():
     print("测试：分类结果为： %f" % classifier_result)
     print("You will problably like this person: %s" % result_list[classifier_result - 1])
     
-    #return
+# 将图像转化为特征向量
+def imag_to_vector(filename):
+    return_vect = []
+    fr = open(filename)
+    file_list = fr.readlines()
        
+    for i in range(len(file_list)):
+        file_str = file_list[i].strip('\n')
+        return_vect.extend(file_str)
+        #return_vect.split('\n')
+    return return_vect
+
+# 手写数字分类器，并打印错误率
+def hand_writing_classify():
+    """
+    Des:
+        手写数字分类器，并打印错误率
+    Args:
+        None
+    Return：
+        None
+    思路：
+        1. 导入训练样本集：特征矩阵及标签向量
+            1）获取目录中文件名列表
+            2）对文件名逐一进行处理成imag_to_vector图样转化函数形参形式
+            3）逐一处理文件imag为矩阵
+            4）获取标签向量
+        2. 导入测试样本集：特征矩阵及标签
+            同Step1
+        3. 运用classify()分类函数循环对每个测试样本点分类
+            1）将测试样本点与训练样本集、标签向量传递给classify()函数进行分类
+            2）判断分类标签与原标签是否一致，不一致则+1
+        4. 统计错误并输出错误率
+    """ 
+    # 导入训练样本集
+    training_file_list = listdir("/home/cui/MachineLearninginAction/MachineLearning-1/input/2.KNN/trainingDigits/")
+    num_training_file = len(training_file_list)
+    hand_write_labels = []
+    data_f_mat = np.zeros((num_training_file, 1024))
+    
+    #遍历每个训练样本点
+    for i in range(num_training_file):
+        #file_list = training_file_list[i].split('.')  #去掉'.txt'等文件后缀名
+        #training_file_list[i] = file_list[0]
+        
+        hand_write_labels.append(training_file_list[i][0]) #文件名首字母为该文件label
+ 
+        data_f_mat[i, :] = imag_to_vector("/home/cui/MachineLearninginAction/MachineLearning-1/input/2.KNN/trainingDigits/"+training_file_list[i])  #构造特征集特征矩阵
+        
+        #print("the label is: %s; " % hand_write_labels[i])
+        #print("the file name is: %s;" % training_file_list[i])
+        
+        
+    #导入测试样本集
+    test_file_list = listdir("/home/cui/MachineLearninginAction/MachineLearning-1/input/2.KNN/testDigits/")
+    num_test_file = len(test_file_list)
+    test_labels = []
+    test_mat = np.zeros((num_test_file, 1024))
+    pre_labels = [] #预测分类
+    err_count = 0
+    
+    #遍历每个测试样本点ls 
+    for i in range(num_test_file):
+        
+        
+        #file_list = test_file_list[i].split('.')
+        #test_file_list[i] = file_list[0]
+        
+        test_labels.append(test_file_list[i][0])
+        test_mat[i, :] = imag_to_vector("/home/cui/MachineLearninginAction/MachineLearning-1/input/2.KNN/testDigits/" + test_file_list[i])
+        
+        #对测试样本点进行分类预测
+        lab = classify(test_mat[i,:], data_f_mat, hand_write_labels, 1)
+        
+        print("预测标签为：" + lab)
+        print("真实标签为： " + test_file_list[i])
+       
+        pre_labels.append(lab)
+
+        if pre_labels == test_labels[0]:
+            err_count += 1
+        
+    err_rate = err_count / num_test_file  #测试集错误率
+    
+    print("本次测试共错误%d次，错误率为%f" % (err_count, err_rate))
+    
+    return err_rate       
+  
