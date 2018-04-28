@@ -224,7 +224,7 @@ def hand_writing_classify():
     pre_labels = [] #预测分类
     err_count = 0
     
-    #遍历每个测试样本点
+    #遍历每个测试样本点ls 
     for i in range(num_test_file):
         
         
