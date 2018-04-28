@@ -249,6 +249,5 @@ def hand_writing_classify():
     
     print("本次测试共错误%d次，错误率为%f" % (err_count, err_rate))
     
-    return err_rate
-        
+    return err_rate       
   
