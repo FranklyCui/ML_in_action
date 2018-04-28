@@ -251,18 +251,4 @@ def hand_writing_classify():
     
     return err_rate
         
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
   
