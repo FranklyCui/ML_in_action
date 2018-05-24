@@ -136,10 +136,6 @@ def build_stump(data_set, class_label, w_point_mat):
         max_column = data_mat[:,i].max()
         step_width = (max_column - min_column) / num_step
         
-        #print("min is :" + str(min_column))
-        #print("max is :" + str(max_column))
-        #print("step_width is : " + str(step_width))
-        
         # 遍历选定的阀值点
         for j in np.arange(min_column, max_column, step_width):
             # **!!** 理解如下：确定划分阀值后，因不确定应该将阀值左、右两侧的点，划分为正类、负类，故都要计算err试一下
@@ -200,17 +196,23 @@ def adaBoost_train(data_set, class_labels, max_iter_times = 40):
     for i in range(max_iter_times):
         classifier, err_classifier = build_stump(data_set, class_labels, w_point_vec)
         alph = 0.5 * np.log((1 - err_classifier) / err_classifier)
+        
         classifier_vec.append(classifier)
         err_classifier_vec.append(err_classifier)
         alph_vec.append(alph)
-        
+        """
+        #print("**%dth classifier is:  " % i)
+        #print(classifier)
+        #print("\n\nerr_vec is: %.3f" % err_classifier)
+        #print("\n\nalph is : %.2f" % alph)
+        """
         # 计算当前基分类器对样本集的预测值
         predict_labels = stump_classify(data_set, classifier["dimen"], classifier["best_thresh_value"], classifier["inequ_sign"])
         predict_labels = np.array(predict_labels.T)[0]  # predict_label 为np.matrix类型，先转为行向量，再提取为
         
         # 测试
         #print("agg_predict_labels is：" + str(agg_predict_labels) + "; and the shape is:" + str(agg_predict_labels.shape))
-        #print("predict_labels is: " + str(predict_labels) + "; and the shape is: " + str(predict_labels.shape))
+        #print("\npredict_labels is: " + str(predict_labels) + "; and the shape is: " + str(predict_labels.shape))
         
         # 记录总分类器的预测结果
         agg_predict_labels += alph * predict_labels
@@ -223,13 +225,55 @@ def adaBoost_train(data_set, class_labels, max_iter_times = 40):
         # 判断是否满足终止条件
         # agg_err_vec  = np.zeros(len(data_set)
         # agg_err_vec[agg_predict_labels != class_labels] =  1.0   # 尝试：看下与下行代码结果有和不同
-        agg_err_vec = np.multiply(agg_predict_labels != class_labels, np.ones(len(data_set)))
+        agg_err_vec = np.multiply(np.sign(agg_predict_labels) != class_labels, np.ones(len(data_set)))
         err_ratio = np.sum(agg_err_vec) / len(data_set)
+        
+        """
+        #print("class_labels is: " + str(class_labels))
+        #print("class_labels's type is: " + str(type(class_labels)))
+        #print("class_labels's shape is: " +str(np.shape(class_labels)))
+        #print()
+        #print("\nagg_predict_labels is: " + str(agg_predict_labels))
+        #print("agg_predict_labels's shape is: " + str(np.shape(agg_predict_labels)))
+        #print("agg_predict_labels's type is: " + str(type(agg_predict_labels)))
+        
+        #print("\nagg_err_vec is: " + str(agg_err_vec))
+        #print("\nerr_ratio is: %0.3f" % err_ratio)
+        
+        
+        #print()
+        #print()
+        #print("-" * 20)
+        """
+
         if err_ratio == 0:
             print("err_ratio is: zero!")
             break
-    return classifier_vec, alph_vec, agg_predict_labels, agg_err_vec
+    return classifier_vec, alph_vec, np.sign(agg_predict_labels), err_ratio
     
+# 输入数据集和分类器，返回数据集分类标签
+def ada_classify(data_set, classifier):
+    """
+    Des:
+        依据输入的数据集和分类器，返回数据集类别标签
+    Args：
+        data_set -- 数据集
+        classifier -- 分类器
+    Return：
+        predict_labels -- 样本集的类别标签
+    思路：
+        1. 初始化一个类别标签向量；
+        2. 遍历分类器所有基分类器，逐次进行求解基分类器的预测标签向量
+        3. 加权求解所有基分类器的预测标签
+    """
+    num_sub_classifier = len(classifier)
+    predict_labels = np.ones(len(data_set))
+    for i in range(num_sub_classifier):
+        sub_label = stump_classify(data_set, sub_classifer[i]["dimen"], sub_classifer[i]["best_thresh_value"], sub_classifer[i]["inequ_sign"])
+        predict_labels += classifier[i]["alph"] * sub_label
+        print("predict_labels is: \n" + str(predict_labels))
+    return np.sign(predict_labels)
+
     
 # 测试函数
 def test():
@@ -241,8 +285,8 @@ def test():
     
     #best_stump, err_best_stump = build_stump(data_set, class_labels, w_point_mat)
     
-    classifier_vec, alph_vec,agg_predict_labels, agg_err_vec = adaBoost_train(data_set, class_labels)
-    print("classifier_vec is: " + str(classifier_vec) + "; \nalph_vec is: " + str(alph_vec) + "; \nagg_err_vec is: " + str(agg_err_vec))
+    return adaBoost_train(data_set, class_labels, max_iter_times = 1)
+    #print("classifier_vec is: " + str(classifier_vec) + "; \n\n\nalph_vec is: " + str(alph_vec) + "; \n\n\nagg_err_vec is: " + str(agg_err_vec))
   
     
 if __name__ == "main":
